@@ -1,0 +1,7 @@
+{
+  "name": "adproof-escrow",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev"
+}
