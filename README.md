@@ -36,15 +36,6 @@ AdProofEscrow/
   docs/design-guidelines/aurivus-extracted-design.md
 ```
 
-## Builder Program Score Path
-
-| Axis | Target | Evidence |
-|---|---:|---|
-| GenLayer fit | 5 | Core escrow settlement depends on subjective AI review of web evidence. |
-| Contract quality | 4-5 | Guarded campaign lifecycle, semantic verdicts, partial payout/refund path, explicit error codes. |
-| Engineering | 4 | Separate contract, frontend, tests, deploy script, README, design documentation. |
-| Frontend / UX | 4 | Full flow for campaign creation, rule setup, proof submission, AI review, and payout release. |
-
 ## Pre-Deploy Verification
 
 ```powershell
