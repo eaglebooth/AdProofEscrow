@@ -17,7 +17,7 @@ import {
   Target,
   Wallet,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { connectWallet, readContract, writeContract } from "@/lib/genlayer";
 
 type Tone = "ok" | "warn" | "bad";
@@ -95,6 +95,47 @@ export default function Home() {
   function pushLog(entry: LogEntry) {
     setLogs((current) => [entry, ...current].slice(0, 5));
   }
+
+  async function syncState() {
+    setBusy("sync");
+    try {
+      const [campaignCountRes, proofCountRes, payoutCountRes] = await Promise.all([
+        readContract("get_campaign_count"),
+        readContract("get_proof_count"),
+        readContract("get_payout_count"),
+      ]);
+
+      if (!campaignCountRes.success || !proofCountRes.success || !payoutCountRes.success) {
+        const err = campaignCountRes.error || proofCountRes.error || payoutCountRes.error || "RPC connection failed";
+        pushLog({ label: "Sync failed", value: err, tone: "warn" });
+        return;
+      }
+
+      const cCount = Number(campaignCountRes.data);
+      const prCount = Number(proofCountRes.data);
+      const pCount = Number(payoutCountRes.data);
+
+      pushLog({
+        label: "Sync success",
+        value: `Connected to GenLayer. Found ${cCount} campaigns, ${prCount} creator proofs, ${pCount} payouts.`,
+        tone: "ok",
+      });
+    } catch (error) {
+      pushLog({
+        label: "Sync error",
+        value: error instanceof Error ? error.message : "Unknown error during sync",
+        tone: "bad",
+      });
+    } finally {
+      setBusy("");
+    }
+  }
+
+  useEffect(() => {
+    if (contractConfigured) {
+      syncState();
+    }
+  }, []);
 
   async function handleWallet() {
     setBusy("wallet");
@@ -282,10 +323,18 @@ export default function Home() {
 
   async function runDemo() {
     document.getElementById("console")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    await createCampaign();
-    await setRules();
-    await submitProof();
-    await reviewProof();
+    if (!contractConfigured) {
+      await createCampaign();
+      await setRules();
+      await submitProof();
+      await reviewProof();
+    } else {
+      pushLog({
+        label: "Live Mode",
+        value: "Workspace active. Connect your wallet, then complete Step 1, 2, 3, and 4 below one by one.",
+        tone: "ok",
+      });
+    }
   }
 
   return (
@@ -432,7 +481,17 @@ export default function Home() {
           </div>
 
           <div className="panel rounded-[28px] p-6">
-            <div className="mb-4 text-sm font-semibold text-[var(--emerald)]">Contract telemetry</div>
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-sm font-semibold text-[var(--emerald)]">Contract telemetry</span>
+              <button
+                onClick={syncState}
+                disabled={Boolean(busy)}
+                className="inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 px-3 text-[10px] font-bold uppercase tracking-wider text-[var(--emerald)] transition-all disabled:opacity-50"
+              >
+                <Loader2 size={10} className={busy === "sync" ? "animate-spin" : ""} />
+                {busy === "sync" ? "Syncing..." : "Sync Contract"}
+              </button>
+            </div>
             <div className="grid gap-2">
               {logs.map((entry) => (
                 <div key={`${entry.label}-${entry.value}`} className={`rounded-[16px] border px-4 py-3 text-sm ${logClass(entry.tone)}`}>
