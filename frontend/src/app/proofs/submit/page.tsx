@@ -1,0 +1,2 @@
+import{PageIntro}from"@/components/PageIntro";import{ActionForm}from"@/components/ActionForm";
+export default async function Page({searchParams}:{searchParams:Promise<{campaign?:string}>}){const{campaign=""}=await searchParams;return <><PageIntro index="CREATOR DESK / SUBMIT" title="Attach the published deliverable." copy="The connected wallet must match the creator assigned by the funded campaign."/><section className="form-section"><ActionForm mode="submit" id={campaign}/></section></>}

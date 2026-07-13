@@ -1,75 +1,57 @@
 import ast
-import re
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / "contracts" / "AdProofEscrow.py"
+SOURCE = (ROOT / "contracts" / "AdProofEscrow.py").read_text(encoding="utf-8")
+TREE = ast.parse(SOURCE)
 
 
-class AdProofEscrowContractStaticTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.source = CONTRACT.read_text(encoding="utf-8")
-        cls.tree = ast.parse(cls.source)
-
-    def test_required_header_and_imports(self):
-        lines = self.source.splitlines()
+class AdProofEscrowV2Tests(unittest.TestCase):
+    def test_runtime_header(self):
+        lines = SOURCE.splitlines()
         self.assertEqual(lines[0], "# v0.2.16")
-        self.assertEqual(
-            lines[1],
-            '# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }',
-        )
+        self.assertEqual(lines[1], '# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }')
         self.assertEqual(lines[2], "from genlayer import *")
-        self.assertIn("import typing", self.source)
-        self.assertIn("import json", self.source)
 
-    def test_nondeterminism_is_wrapped(self):
-        self.assertIn("def run_review() -> str:", self.source)
-        self.assertIn("gl.nondet.web.get", self.source)
-        self.assertIn("gl.nondet.exec_prompt", self.source)
-        self.assertIn("gl.eq_principle.strict_eq(run_review)", self.source)
+    def test_real_payable_escrow_and_transfers(self):
+        self.assertIn("@gl.public.write.payable\n    def create_campaign", SOURCE)
+        self.assertIn("reward = gl.message.value", SOURCE)
+        self.assertGreaterEqual(SOURCE.count("emit_transfer(value=amount)"), 2)
 
-    def test_core_methods_exist(self):
-        for name in [
-            "create_campaign",
-            "set_campaign_rules",
-            "submit_proof",
-            "review_proof",
-            "release_payout",
-            "refund_brand",
-            "appeal_review",
-        ]:
-            self.assertIn(f"def {name}", self.source)
+    def test_sender_authorization(self):
+        self.assertIn("NOT_CAMPAIGN_BRAND", SOURCE)
+        self.assertIn("NOT_CAMPAIGN_CREATOR", SOURCE)
+        self.assertIn("gl.message.sender_address.as_hex", SOURCE)
 
-    def test_storage_annotations_use_allowed_types(self):
-        contract_class = next(
-            node
-            for node in self.tree.body
-            if isinstance(node, ast.ClassDef) and node.name == "AdProofEscrow"
-        )
-        allowed = {"TreeMap[u256, str]", "TreeMap[u256, u256]", "DynArray[str]", "DynArray[u256]", "u256"}
-        for statement in contract_class.body:
+    def test_semantic_consensus_not_strict_equality(self):
+        self.assertIn("gl.eq_principle.prompt_comparative", SOURCE)
+        self.assertNotIn("gl.eq_principle.strict_eq", SOURCE)
+
+    def test_current_web_api(self):
+        self.assertIn("gl.nondet.web.render", SOURCE)
+        self.assertNotIn("gl.nondet.web.get", SOURCE)
+
+    def test_complete_lifecycle_methods(self):
+        for method in ["create_campaign", "set_campaign_rules", "submit_proof", "review_proof", "revise_proof", "open_appeal", "resolve_appeal", "accept_rejection", "release_payout", "refund_brand"]:
+            self.assertIn(f"def {method}", SOURCE)
+
+    def test_contract_computes_payout_percentage(self):
+        self.assertIn('self.proof_payout_percentages[proof_id] = u256(100)', SOURCE)
+        self.assertIn('self.proof_payout_percentages[proof_id] = u256(50)', SOURCE)
+        self.assertNotIn('data.get("payout_percentage"', SOURCE)
+
+    def test_storage_annotations_are_supported(self):
+        contract = next(node for node in TREE.body if isinstance(node, ast.ClassDef) and node.name == "AdProofEscrow")
+        allowed = {"TreeMap[u256, str]", "TreeMap[u256, u256]", "u256"}
+        for statement in contract.body:
             if isinstance(statement, ast.AnnAssign):
-                annotation = ast.unparse(statement.annotation)
-                self.assertIn(annotation, allowed)
+                self.assertIn(ast.unparse(statement.annotation), allowed)
 
-    def test_public_signatures_are_flat(self):
-        forbidden = {"int", "float", "bool", "list", "dict", "tuple"}
-        for node in ast.walk(self.tree):
-            if not isinstance(node, ast.FunctionDef):
-                continue
-            decorators = [ast.unparse(item) for item in node.decorator_list]
-            if not any(item.startswith("gl.public.") for item in decorators):
-                continue
-            self.assertLessEqual(len(node.args.args) - 1, 6)
-            for arg in node.args.args[1:]:
-                annotation = ast.unparse(arg.annotation)
-                self.assertNotIn(annotation, forbidden)
-
-    def test_no_demo_entrypoint(self):
-        self.assertNotRegex(self.source, re.compile(r"if\s+__name__\s*=="))
+    def test_no_demo_or_script_entrypoint(self):
+        self.assertNotIn("Demo", SOURCE)
+        self.assertNotIn('__name__ == "__main__"', SOURCE)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,2 @@
+import Link from "next/link";import{ArrowUpRight}from"lucide-react";import{PageIntro}from"@/components/PageIntro";import{Registry}from"@/components/Registry";
+export default function Page(){return <><PageIntro index="BRAND DESK / 01" title="Funded campaigns, not informal promises." copy="Inspect the brand, assigned creator, immutable rules, escrow balance, and current delivery state."/><div className="page-action"><Link href="/campaigns/new">Fund campaign <ArrowUpRight/></Link></div><Registry kind="campaigns"/></>}

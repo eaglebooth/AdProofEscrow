@@ -1,0 +1,2 @@
+import Link from"next/link";import{ArrowUpRight}from"lucide-react";import{PageIntro}from"@/components/PageIntro";import{Registry}from"@/components/Registry";
+export default function Page(){return <><PageIntro index="CREATOR DESK / 02" title="Public delivery, preserved as evidence." copy="Review each original URL, current revision, verdict, score, appeal state, and computed payout percentage."/><div className="page-action"><Link href="/proofs/submit">Submit proof <ArrowUpRight/></Link></div><Registry kind="proofs"/></>}

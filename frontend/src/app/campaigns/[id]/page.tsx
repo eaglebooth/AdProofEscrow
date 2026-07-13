@@ -1,0 +1,2 @@
+import{PageIntro}from"@/components/PageIntro";import{RecordDetail}from"@/components/RecordDetail";
+export default async function Page({params}:{params:Promise<{id:string}>}){const{id}=await params;return <><PageIntro index={`CAMPAIGN / ${id}`} title="The funded campaign record." copy="Read custody, parties, rules, proof linkage, and settlement state directly from Studionet."/><RecordDetail kind="campaign" id={id}/></>}

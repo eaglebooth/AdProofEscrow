@@ -1,0 +1,2 @@
+import{PageIntro}from"@/components/PageIntro";import{ActionForm}from"@/components/ActionForm";
+export default async function Page({params}:{params:Promise<{id:string}>}){const{id}=await params;return <><PageIntro index={`CAMPAIGN / ${id} / RULES`} title="Lock the evaluation boundary." copy="Only the brand can set these rules, and only before creator proof exists."/><section className="form-section"><ActionForm mode="rules" id={id}/></section></>}

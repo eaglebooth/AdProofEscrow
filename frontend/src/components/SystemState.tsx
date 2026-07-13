@@ -1,0 +1,6 @@
+"use client";
+import { RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { readContract } from "@/lib/genlayer";
+const initial={total_locked:"-",total_creator_paid:"-",total_brand_refunded:"-",campaign_count:"-",proof_count:"-",settlement_count:"-"};
+export function SystemState(){const address=process.env.NEXT_PUBLIC_CONTRACT_ADDRESS||"";const[data,setData]=useState<Record<string,string>>(initial);const[msg,setMsg]=useState(address?"Ready to verify Studionet state.":"Deploy AdProofEscrow V2 to enable live reads.");async function sync(){const r=await readContract("get_system_state",[],address);if(!r.success){setMsg(r.error||"Read failed");return}try{setData(JSON.parse(String(r.data)));setMsg("Live Studionet state verified.")}catch{setMsg("Malformed state response.")}}return <section className="state"><div className="state-title"><span>CONTRACT PULSE</span><p>{msg}</p><button onClick={sync} disabled={!address}><RefreshCw/>Sync contract</button></div><div className="state-values">{[["GEN locked",data.total_locked],["Creator paid",data.total_creator_paid],["Brand refunded",data.total_brand_refunded],["Campaigns",data.campaign_count],["Proofs",data.proof_count],["Settlements",data.settlement_count]].map(([l,v])=><div key={l}><span>{l}</span><strong>{v}</strong></div>)}</div></section>}

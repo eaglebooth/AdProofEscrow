@@ -1,0 +1,2 @@
+import{PageIntro}from"@/components/PageIntro";import{RecordDetail}from"@/components/RecordDetail";
+export default async function Page({params}:{params:Promise<{id:string}>}){const{id}=await params;return <><PageIntro index={`PROOF / ${id}`} title="The complete delivery record." copy="Original proof remains visible while revisions, reviews, and appeal evidence accumulate around it."/><RecordDetail kind="proof" id={id}/></>}
